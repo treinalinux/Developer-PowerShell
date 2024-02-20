@@ -26,7 +26,11 @@ function Add-UsersInGroupsPosix {
         $AccountsInvalids = @()
         $UserNames | ForEach-Object {
             $UserEnabled = Get-UsersEnabled $_
-            $AccountsValidade += $($UserEnabled)
+            if ($UserEnabled) {
+                $AccountsValidade += $($UserEnabled)
+            } Else {
+                $AccountsInvalids += $($_)
+            }
         }
 
         Start-Sleep 2
@@ -49,9 +53,8 @@ function Add-UsersInGroupsPosix {
     }
 
     end {
-        $UserNames | ForEach-Object {
-            $InvalidUser = Get-UsersEnabled $_
-            $AccountsInvalids += $($InvalidUser)
+        $AccountsInvalids | ForEach-Object {
+            Get-UsersEnabled $_
         }
     }
 }
@@ -66,10 +69,15 @@ function Get-UsersEnabled {
     )
 
     $UserNames | ForEach-Object {
-        (Get-ADUser -Identity $_).Enabled
-        if ($($_.Enabled) -eq "Enabled") {
-            $UserEnabled =  $($_.SamAccountName)
-            return $UserEnabled.tolower()
+        try {
+            (Get-ADUser -Identity $_).Enabled
+            if ($($_.Enabled) -eq "Enabled") {
+                $UserEnabled =  $($_.SamAccountName)
+                return $UserEnabled.tolower()
+            }
+        }
+        catch {
+            return $false
         }
     }
 }
